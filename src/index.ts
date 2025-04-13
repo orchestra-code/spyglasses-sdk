@@ -1,2 +1,3 @@
 export * from './types';
-export * from './utils/detector'; 
+export { detect } from './utils/detector';
+export type { DetectionResult } from './utils/detector'; 

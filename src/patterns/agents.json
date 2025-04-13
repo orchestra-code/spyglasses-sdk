@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "agents": [
+    {
+      "pattern": "Perplexity-User\\/[0-9]",
+      "url": "-[p",
+      "instances": [
+        "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Perplexity-User/1.0; +https://perplexity.ai/perplexity-user)"
+      ]
+    },
+    {
+      "pattern": "Claude-User\\/[0-9]",
+      "url": "https://anthropic.com/claude",
+      "instances": [
+        "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; Claude-User/1.0; +https://anthropic.com/claude"
+      ]
+    },
+    {
+      "pattern": "Claude-SearchBot\\/[0-9]",
+      "url": "https://anthropic.com/claude",
+      "instances": [
+        "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; Claude-SearchBot/1.0; +https://anthropic.com/claude"
+      ]
+    }
+  ]
+} 
