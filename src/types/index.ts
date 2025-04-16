@@ -8,4 +8,10 @@ export interface CollectorPayload {
   userAgent: string;
   headers: Record<string, string>;
   ip?: string;
+}
+
+export interface Pattern {
+  pattern: string;
+  url?: string;
+  instances?: string[];
 } 
