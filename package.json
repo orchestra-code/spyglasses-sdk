@@ -14,7 +14,7 @@
 		"test:watch": "vitest",
 		"test:coverage": "vitest run --coverage",
 		"version": "changeset version",
-		"release": "npm run build && changeset publish",
+		"release": "npm run build && changeset publish --access public",
 		"prepare": "husky"
 	},
 	"repository": {
