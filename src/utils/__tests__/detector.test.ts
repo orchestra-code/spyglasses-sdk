@@ -164,7 +164,6 @@ describe('detectDetailed', () => {
   describe('Search crawlers', () => {
     it('should properly categorize Googlebot', () => {
       const result = detectDetailed('Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)');
-      console.log `googlebot result: ${result}`
       expect(result).toMatchObject({
         isBot: true,
         category: 'Search Crawler',

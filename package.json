@@ -14,7 +14,7 @@
 		"test:watch": "vitest",
 		"test:coverage": "vitest run --coverage",
 		"version": "changeset version",
-		"release": "npm run build && changeset publish --access public",
+		"release": "npm run build && npm publish --access public",
 		"prepare": "husky"
 	},
 	"repository": {
@@ -34,8 +34,5 @@
 	"bugs": {
 		"url": "https://github.com/orchestra-code/spyglasses-sdk/issues"
 	},
-	"homepage": "https://github.com/orchestra-code/spyglasses-sdk#readme",
-	"dependencies": {
-		"crawler-user-agents": "^1.7.0"
-	}
+	"homepage": "https://github.com/orchestra-code/spyglasses-sdk#readme"
 }
