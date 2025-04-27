@@ -1,3 +1,4 @@
-export * from './types';
 export { detect, detectDetailed } from './utils/detector';
-export type { DetectionResult } from './types/detector'; 
+export { getAllPatterns, ExportedPattern } from './utils/patternExport';
+export * from './types';
+export type { DetectionResult } from './types/detector';
