@@ -549,6 +549,14 @@ export class Spyglasses {
   }
   
   /**
+   * Check if an API key is set
+   * @returns True if an API key is set, false otherwise
+   */
+  public hasApiKey(): boolean {
+    return !!this.apiKey;
+  }
+  
+  /**
    * Update configuration
    * @param config New configuration options
    */
