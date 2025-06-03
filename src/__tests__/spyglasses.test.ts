@@ -86,17 +86,87 @@ describe('Spyglasses Core', () => {
         })
       );
       
-      expect(result).toHaveProperty('version', '1.0.0');
-      expect(result).toHaveProperty('patterns');
-      expect(Array.isArray((result as any).patterns)).toBe(true);
+      // Result should be an ApiPatternResponse object, not a string
+      expect(typeof result).toBe('object');
+      if (typeof result === 'object') {
+        expect(result).toHaveProperty('version', '1.0.0');
+        expect(result).toHaveProperty('patterns');
+        expect(Array.isArray(result.patterns)).toBe(true);
+      }
     });
     
     it('should handle API errors gracefully', async () => {
       vi.mocked(fetch).mockRejectedValueOnce(new Error('Network error'));
       
       const result = await spyglasses.syncPatterns();
+      
+      // Should return an error string when sync fails
       expect(typeof result).toBe('string');
       expect(result).toContain('Error syncing patterns');
+    });
+    
+    it('should handle HTTP errors gracefully', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        statusText: 'Forbidden'
+      } as Response);
+      
+      const result = await spyglasses.syncPatterns();
+      
+      // Should return an error string for HTTP errors
+      expect(typeof result).toBe('string');
+      expect(result).toContain('Pattern sync HTTP error 403: Forbidden');
+    });
+    
+    it('should handle invalid response format gracefully', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ invalid: 'response' })
+      } as Response);
+      
+      const result = await spyglasses.syncPatterns();
+      
+      // Should return an error string for invalid response format
+      expect(typeof result).toBe('string');
+      expect(result).toContain('Invalid pattern response format');
+    });
+    
+    it('should handle missing API key gracefully', async () => {
+      const spyglassesNoKey = new Spyglasses({
+        debug: false
+      });
+      
+      const result = await spyglassesNoKey.syncPatterns();
+      
+      // Should return an error string when no API key is set
+      expect(typeof result).toBe('string');
+      expect(result).toContain('No API key set for pattern sync');
+    });
+    
+    it('should include Next.js caching options when in Next.js environment', async () => {
+      // Mock process.env to simulate Next.js environment
+      const originalEnv = process.env;
+      process.env = { ...originalEnv, SPYGLASSES_CACHE_TTL: '3600' };
+      
+      await spyglasses.syncPatterns();
+      
+      expect(fetch).toHaveBeenCalledWith(
+        'https://www.spyglasses.io/api/patterns',
+        expect.objectContaining({
+          method: 'GET',
+          headers: expect.objectContaining({
+            'x-api-key': 'test-api-key'
+          }),
+          next: expect.objectContaining({
+            revalidate: 3600,
+            tags: ['spyglasses-patterns']
+          })
+        })
+      );
+      
+      // Restore original environment
+      process.env = originalEnv;
     });
   });
   

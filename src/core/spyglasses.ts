@@ -5,7 +5,8 @@ import {
   BotPattern, 
   AiReferrerInfo,
   BotInfo,
-  CollectorPayload
+  CollectorPayload,
+  NextFetchOptions
 } from '../types';
 
 /**
@@ -162,13 +163,27 @@ export class Spyglasses {
     }
 
     try {
-      const response = await fetch(this.patternsEndpoint, {
+      const fetchOptions: NextFetchOptions = {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': this.apiKey
         }
-      });
+      };
+
+      // Add Next.js caching if we're in a Next.js environment
+      if (typeof process !== 'undefined' && process.env) {
+        const cacheTime = process.env.SPYGLASSES_CACHE_TTL 
+          ? parseInt(process.env.SPYGLASSES_CACHE_TTL, 10)
+          : 60 * 60 * 24; // 24 hours default
+
+        fetchOptions.next = {
+          revalidate: cacheTime,
+          tags: ['spyglasses-patterns']
+        };
+      }
+
+      const response = await fetch(this.patternsEndpoint, fetchOptions);
 
       if (!response.ok) {
         const message = `Pattern sync HTTP error ${response.status}: ${response.statusText}`;

@@ -106,4 +106,15 @@ export interface CollectorPayload {
     referrer_id?: string;
     referrer_name?: string;
   };
+}
+
+/**
+ * Next.js extended fetch options
+ * Adds Next.js-specific caching and revalidation options
+ */
+export interface NextFetchOptions extends RequestInit {
+  next?: {
+    revalidate?: number | false;
+    tags?: string[];
+  };
 } 
