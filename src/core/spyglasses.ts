@@ -76,8 +76,20 @@ export class Spyglasses {
    * Load default patterns that are bundled with the SDK
    */
   private loadDefaultPatterns(): void {
-    // Default minimal patterns to use if API sync fails
+    // Default minimal patterns to use if API sync fails; Log visits from AI Assistants and AI Crawlers (but default to blocking the crawlers)
     this.patterns = [
+      // AI Assistants (user-initiated requests, not model trainers)
+      {
+        pattern: 'ChatGPT-User\\/[0-9]',
+        url: 'https://platform.openai.com/docs/bots',
+        type: 'chatgpt-user',
+        category: 'AI Agent',
+        subcategory: 'AI Assistants',
+        company: 'OpenAI',
+        isCompliant: true,
+        isAiModelTrainer: false,
+        intent: 'UserQuery'
+      },
       {
         pattern: 'Perplexity-User\\/[0-9]',
         url: 'https://docs.perplexity.ai/guides/bots',
@@ -86,6 +98,18 @@ export class Spyglasses {
         subcategory: 'AI Assistants',
         company: 'Perplexity AI',
         isCompliant: true,
+        isAiModelTrainer: false,
+        intent: 'UserQuery'
+      },
+      {
+        pattern: 'Gemini-User\\/[0-9]',
+        url: 'https://ai.google.dev/gemini-api/docs/bots',
+        type: 'gemini-user',
+        category: 'AI Agent',
+        subcategory: 'AI Assistants',
+        company: 'Google',
+        isCompliant: true,
+        isAiModelTrainer: false,
         intent: 'UserQuery'
       },
       {
@@ -96,27 +120,65 @@ export class Spyglasses {
         subcategory: 'AI Assistants',
         company: 'Anthropic',
         isCompliant: true,
+        isAiModelTrainer: false,
         intent: 'UserQuery'
       },
+      
+      // AI Model Training Crawlers (can be blocked with blockAiModelTrainers setting)
       {
-        pattern: 'Claude-SearchBot\\/[0-9]',
-        url: 'https://support.anthropic.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler',
-        type: 'claude-searchbot',
+        pattern: 'CCBot\\/[0-9]',
+        url: 'https://commoncrawl.org/ccbot',
+        type: 'ccbot',
         category: 'AI Crawler',
-        subcategory: 'Search Enhancement Crawlers',
+        subcategory: 'Model Training Crawlers',
+        company: 'Common Crawl',
+        isCompliant: true,
+        isAiModelTrainer: true,
+        intent: 'DataCollection'
+      },
+      {
+        pattern: 'ClaudeBot\\/[0-9]',
+        url: 'https://support.anthropic.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler',
+        type: 'claude-bot',
+        category: 'AI Crawler',
+        subcategory: 'Model Training Crawlers',
         company: 'Anthropic',
         isCompliant: true,
-        intent: 'Search'
+        isAiModelTrainer: true,
+        intent: 'DataCollection'
       },
       {
         pattern: 'GPTBot\\/[0-9]',
         url: 'https://platform.openai.com/docs/gptbot',
         type: 'gptbot',
         category: 'AI Crawler',
-        subcategory: 'Search Enhancement Crawlers',
+        subcategory: 'Model Training Crawlers',
         company: 'OpenAI',
         isCompliant: true,
-        intent: 'Search'
+        isAiModelTrainer: true,
+        intent: 'DataCollection'
+      },
+      {
+        pattern: 'meta-externalagent\\/[0-9]',
+        url: 'https://developers.facebook.com/docs/sharing/webmasters/crawler',
+        type: 'meta-externalagent',
+        category: 'AI Crawler',
+        subcategory: 'Model Training Crawlers',
+        company: 'Meta',
+        isCompliant: true,
+        isAiModelTrainer: true,
+        intent: 'DataCollection'
+      },
+      {
+        pattern: 'Applebot-Extended\\/[0-9]',
+        url: 'https://support.apple.com/en-us/119829',
+        type: 'applebot-extended',
+        category: 'AI Crawler',
+        subcategory: 'Model Training Crawlers',
+        company: 'Apple',
+        isCompliant: true,
+        isAiModelTrainer: true,
+        intent: 'DataCollection'
       }
     ];
     
@@ -127,7 +189,7 @@ export class Spyglasses {
         name: 'ChatGPT',
         company: 'OpenAI',
         url: 'https://chat.openai.com',
-        patterns: ['chat.openai.com'],
+        patterns: ['chat.openai.com', 'chatgpt.com'],
         description: 'Traffic from ChatGPT users clicking on links'
       },
       {
@@ -141,10 +203,26 @@ export class Spyglasses {
       {
         id: 'perplexity',
         name: 'Perplexity',
-        company: 'Perplexity',
+        company: 'Perplexity AI',
         url: 'https://perplexity.ai',
         patterns: ['perplexity.ai'],
         description: 'Traffic from Perplexity users clicking on links'
+      },
+      {
+        id: 'gemini',
+        name: 'Gemini',
+        company: 'Google',
+        url: 'https://gemini.google.com',
+        patterns: ['gemini.google.com', 'bard.google.com'],
+        description: 'Traffic from Gemini users clicking on links'
+      },
+      {
+        id: 'copilot',
+        name: 'Microsoft Copilot',
+        company: 'Microsoft',
+        url: 'https://copilot.microsoft.com/',
+        patterns: ['copilot.microsoft.com', 'bing.com/chat'],
+        description: 'Traffic from Microsoft Copilot users clicking on links'
       }
     ];
   }

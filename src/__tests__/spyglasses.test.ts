@@ -279,6 +279,29 @@ describe('Spyglasses Core', () => {
         blockAiModelTrainers: true
       });
       
+      // Test GPTBot (should be blocked with default patterns)
+      const gptBotResult = customSpyglasses.detectBot('Mozilla/5.0 (compatible; GPTBot/1.0; +https://openai.com/gptbot)');
+      expect(gptBotResult.isBot).toBe(true);
+      expect(gptBotResult.shouldBlock).toBe(true);
+      
+      // Test ClaudeBot (should be blocked with default patterns)  
+      const claudeResult = customSpyglasses.detectBot('Mozilla/5.0 (compatible; ClaudeBot/1.0; +https://anthropic.com)');
+      expect(claudeResult.isBot).toBe(true);
+      expect(claudeResult.shouldBlock).toBe(true);
+      
+      // Test ChatGPT-User (should NOT be blocked - it's an AI Assistant, not model trainer)
+      const chatgptUserResult = customSpyglasses.detectBot('Mozilla/5.0 (compatible; ChatGPT-User/1.0)');
+      expect(chatgptUserResult.isBot).toBe(true);
+      expect(chatgptUserResult.shouldBlock).toBe(false);
+    });
+
+    it('should block AI model trainers with default patterns before API sync', () => {
+      // Create instance with AI model trainer blocking but no API sync
+      const customSpyglasses = new Spyglasses({
+        blockAiModelTrainers: true,
+        autoSync: false // Ensure we're only using default patterns
+      });
+
       // Override pattern with isAiModelTrainer flag
       customSpyglasses['patterns'] = [
         {
@@ -290,9 +313,9 @@ describe('Spyglasses Core', () => {
           isAiModelTrainer: true
         }
       ];
-      
+
       const result = customSpyglasses.detectBot('Mozilla/5.0 (compatible; AITrainer/1.0)');
-      
+
       expect(result.isBot).toBe(true);
       expect(result.shouldBlock).toBe(true);
     });
