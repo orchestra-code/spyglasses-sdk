@@ -601,8 +601,24 @@ export class Spyglasses {
       responseTime?: number;
     }
   ): Promise<Response | void> {
+    if (this.debug) {
+      console.log(`Spyglasses: logRequest() called for sourceType: ${detectionResult.sourceType}`);
+    }
+    
     if (!this.apiKey || detectionResult.sourceType === 'none') {
+      if (this.debug) {
+        if (!this.apiKey) {
+          console.log('Spyglasses: logRequest() skipped - no API key');
+        } else {
+          console.log('Spyglasses: logRequest() skipped - sourceType is none');
+        }
+      }
       return;
+    }
+    
+    if (this.debug) {
+      console.log(`Spyglasses: Preparing to log ${detectionResult.sourceType} event to collector`);
+      console.log(`Spyglasses: Collector endpoint: ${this.collectEndpoint}`);
     }
     
     // Start timing if not provided
@@ -625,6 +641,10 @@ export class Spyglasses {
         confidence: 0.9, // High confidence for pattern matches
         detection_method: 'pattern_match'
       });
+      
+      if (this.debug) {
+        console.log('Spyglasses: Prepared bot metadata:', metadata);
+      }
     } else if (detectionResult.sourceType === 'ai_referrer' && detectionResult.info) {
       const referrerInfo = detectionResult.info as AiReferrerInfo;
       Object.assign(metadata, {
@@ -633,6 +653,10 @@ export class Spyglasses {
         referrer_name: referrerInfo.name,
         company: referrerInfo.company
       });
+      
+      if (this.debug) {
+        console.log('Spyglasses: Prepared AI referrer metadata:', metadata);
+      }
     }
     
     // Calculate response time if not provided
@@ -654,9 +678,22 @@ export class Spyglasses {
       metadata
     };
     
+    if (this.debug) {
+      console.log('Spyglasses: Complete payload to be sent:', JSON.stringify(payload, null, 2));
+    }
+    
     try {
       // Stringify the payload first to ensure it's valid JSON
       const jsonPayload = JSON.stringify(payload);
+      
+      if (this.debug) {
+        console.log(`Spyglasses: Making POST request to ${this.collectEndpoint}`);
+        console.log(`Spyglasses: Request headers:`, {
+          'Content-Type': 'application/json',
+          'x-api-key': this.apiKey ? `${this.apiKey.substring(0, 8)}...` : 'undefined'
+        });
+        console.log(`Spyglasses: Payload size: ${jsonPayload.length} bytes`);
+      }
       
       const response = await fetch(this.collectEndpoint, {
         method: 'POST',
@@ -668,18 +705,37 @@ export class Spyglasses {
       });
       
       if (this.debug) {
-        if (!response.ok) {
-          console.error(`Spyglasses: Collector API error (HTTP ${response.status}): ${await response.text()}`);
-        } else if (detectionResult.shouldBlock) {
-          console.log(`Spyglasses: Blocked ${detectionResult.sourceType}: ${requestInfo.userAgent || requestInfo.referrer}`);
+        console.log(`Spyglasses: Collector response status: ${response.status} ${response.statusText}`);
+        
+        // Try to read response body for debugging
+        try {
+          const responseClone = response.clone();
+          const responseText = await responseClone.text();
+          console.log(`Spyglasses: Collector response body: ${responseText}`);
+        } catch (readError) {
+          console.log(`Spyglasses: Could not read response body: ${readError}`);
+        }
+        
+        if (response.ok) {
+          console.log(`Spyglasses: ✅ Successfully logged ${detectionResult.sourceType} event`);
+        } else {
+          console.error(`Spyglasses: ❌ Failed to log ${detectionResult.sourceType} event`);
         }
       }
       
       return response;
     } catch (error) {
       if (this.debug) {
-        console.error('Spyglasses collector error:', error);
+        console.error(`Spyglasses: ❌ Exception during collector request for ${detectionResult.sourceType}:`, error);
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+          console.error('Spyglasses: This appears to be a network/fetch error - check network connectivity');
+        }
       }
+      
+      // In production/non-debug mode, handle errors gracefully
+      // In debug mode, you can choose to re-throw for debugging purposes
+      // For now, we'll always handle gracefully to maintain backward compatibility
+      return undefined;
     }
   }
   
