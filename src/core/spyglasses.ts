@@ -375,6 +375,9 @@ export class Spyglasses {
    */
   public detectBot(userAgent: string): DetectionResult {
     if (!userAgent) {
+      if (this.debug) {
+        console.log('Spyglasses: detectBot() called with empty user agent');
+      }
       return {
         isBot: false,
         shouldBlock: false,
@@ -382,12 +385,34 @@ export class Spyglasses {
       };
     }
     
+    if (this.debug) {
+      console.log(`Spyglasses: detectBot() checking user agent: "${userAgent.substring(0, 150)}${userAgent.length > 150 ? '...' : ''}"`);
+      console.log(`Spyglasses: Testing against ${this.patterns.length} bot patterns`);
+    }
+    
     // Check each pattern
     for (const pattern of this.patterns) {
       try {
         const regex = this.getRegexForPattern(pattern.pattern);
+        
+        if (this.debug) {
+          console.log(`Spyglasses: Testing pattern: "${pattern.pattern}" (${pattern.type || 'unknown'} - ${pattern.company || 'unknown company'})`);
+        }
+        
         if (regex.test(userAgent)) {
           const shouldBlock = this.shouldBlockPattern(pattern);
+          
+          if (this.debug) {
+            console.log(`Spyglasses: ✅ BOT DETECTED! Pattern matched: "${pattern.pattern}"`);
+            console.log(`Spyglasses: Bot details:`, {
+              type: pattern.type,
+              category: pattern.category,
+              subcategory: pattern.subcategory,
+              company: pattern.company,
+              isAiModelTrainer: pattern.isAiModelTrainer,
+              shouldBlock
+            });
+          }
           
           // Create a BotInfo object
           const botInfo: BotInfo = {
@@ -417,6 +442,10 @@ export class Spyglasses {
       }
     }
     
+    if (this.debug) {
+      console.log('Spyglasses: No bot patterns matched user agent');
+    }
+    
     return {
       isBot: false,
       shouldBlock: false,
@@ -431,6 +460,9 @@ export class Spyglasses {
    */
   public detectAiReferrer(referrer: string): DetectionResult {
     if (!referrer) {
+      if (this.debug) {
+        console.log('Spyglasses: detectAiReferrer() called with empty referrer');
+      }
       return {
         isBot: false,
         shouldBlock: false,
@@ -443,16 +475,40 @@ export class Spyglasses {
     try {
       const url = new URL(referrer);
       hostname = url.hostname.toLowerCase();
+      if (this.debug) {
+        console.log(`Spyglasses: Extracted hostname: "${hostname}"`);
+      }
     } catch (error) {
       // If parsing fails, use the raw string
       hostname = referrer.toLowerCase();
+      if (this.debug) {
+        console.log(`Spyglasses: URL parsing failed, using raw referrer: "${hostname}"`);
+      }
     }
     
     // Check each AI referrer
     for (const aiReferrer of this.aiReferrers) {
       try {
+        if (this.debug) {
+          console.log(`Spyglasses: Testing AI referrer: "${aiReferrer.name}" (${aiReferrer.company}) with patterns: ${aiReferrer.patterns.join(', ')}`);
+        }
+        
         for (const pattern of aiReferrer.patterns) {
+          if (this.debug) {
+            console.log(`Spyglasses: Testing AI referrer pattern: "${pattern}" against hostname: "${hostname}"`);
+          }
+          
           if (hostname.includes(pattern)) {
+            if (this.debug) {
+              console.log(`Spyglasses: ✅ AI REFERRER DETECTED! Pattern matched: "${pattern}"`);
+              console.log(`Spyglasses: AI referrer details:`, {
+                name: aiReferrer.name,
+                company: aiReferrer.company,
+                id: aiReferrer.id,
+                matchedPattern: pattern
+              });
+            }
+            
             // AI referrers are never blocked (they are human visitors)
             return {
               isBot: false,
@@ -484,18 +540,36 @@ export class Spyglasses {
    * @returns A DetectionResult object
    */
   public detect(userAgent: string, referrer?: string): DetectionResult {
+    if (this.debug) {
+      console.log('Spyglasses: detect() called with:', {
+        userAgent: userAgent ? `"${userAgent.substring(0, 100)}${userAgent.length > 100 ? '...' : ''}"` : 'undefined',
+        referrer: referrer || 'undefined'
+      });
+    }
+    
     // Check for bot first
     const botResult = this.detectBot(userAgent);
     if (botResult.isBot) {
+      if (this.debug) {
+        console.log('Spyglasses: 🤖 Final result: BOT detected, returning bot result');
+      }
       return botResult;
     }
     
     // Then check for AI referrer if referrer is provided
     if (referrer) {
+      if (this.debug) {
+        console.log('Spyglasses: No bot detected, starting AI referrer detection...');
+      }
       const referrerResult = this.detectAiReferrer(referrer);
       if (referrerResult.sourceType === 'ai_referrer') {
+        if (this.debug) {
+          console.log('Spyglasses: 🧠 Final result: AI REFERRER detected, returning referrer result');
+        }
         return referrerResult;
       }
+    } else if (this.debug) {
+      console.log('Spyglasses: No referrer provided, skipping AI referrer detection');
     }
     
     // Return negative result if neither

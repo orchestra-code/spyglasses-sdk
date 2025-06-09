@@ -30,7 +30,7 @@ import { init, detect, detectBot, detectAiReferrer } from '@spyglasses/sdk';
 // Initialize with your API key
 init({
   apiKey: 'your-api-key',
-  debug: true // Enable debug logging
+  debug: process.env.SPYGLASSES_DEBUG === 'true' // Enable detailed debug logging
 });
 
 // Detect bots and AI referrers in one call
@@ -155,7 +155,7 @@ const app = express();
 // Add Spyglasses middleware
 app.use(createSpyglassesMiddleware({
   apiKey: 'your-api-key',
-  debug: process.env.NODE_ENV !== 'production',
+  debug: process.env.SPYGLASSES_DEBUG === 'true',
   blockAiModelTrainers: true
 }));
 

@@ -107,7 +107,7 @@ function createSpyglassesMiddleware(options = {}) {
 // // Add Spyglasses middleware
 // app.use(createSpyglassesMiddleware({
 //   apiKey: 'your-api-key',
-//   debug: process.env.NODE_ENV !== 'production',
+//   debug: process.env.SPYGLASSES_DEBUG === 'true',
 //   blockAiModelTrainers: true,
 //   customBlocks: ['category:Scraper']
 // }));
