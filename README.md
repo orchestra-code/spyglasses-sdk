@@ -9,7 +9,6 @@ This SDK provides bot detection and AI agent identification tools for integratio
 - **API-driven Pattern Management**: Automatically fetch and update detection patterns from the Spyglasses API
 - **Intelligent Bot Detection**: Identify AI agents, crawlers, and other bots with precision
 - **AI Referrer Detection**: Track human traffic coming from AI platforms like ChatGPT and Claude
-- **Customizable Blocking Rules**: Control which types of bots to allow or block
 - **Easy Integration**: Simple APIs for any JavaScript or TypeScript environment
 
 ## Installation
@@ -61,16 +60,13 @@ import { init, Spyglasses } from '@spyglasses/sdk';
 // Global instance for simple API
 init({
   apiKey: 'your-api-key',
-  debug: false,
-  blockAiModelTrainers: true, // Block AI model training bots
-  customBlocks: ['category:Scraper'], // Block all scrapers
-  customAllows: ['pattern:Googlebot'] // Always allow Googlebot
+  debug: false
 });
 
 // Or create a dedicated instance
 const spyglasses = new Spyglasses({
   apiKey: 'your-api-key',
-  // Same config options as above
+  debug: false
 });
 ```
 
@@ -124,25 +120,22 @@ await spyglasses.logRequest(detectionResult, {
 });
 ```
 
-### Block Rules
+### Blocking Rules Configuration
 
-You can configure blocking rules with custom allow and block lists:
+Blocking rules are now managed through the Spyglasses platform web interface. You can configure:
 
-```typescript
-init({
-  apiKey: 'your-api-key',
-  blockAiModelTrainers: true, // Block all AI model trainers
-  customBlocks: [
-    'category:Scraper', // Block all scrapers
-    'pattern:SomeSpecificBot', // Block a specific bot pattern
-    'subcategory:AI Agent:AI Assistants' // Block a subcategory
-  ],
-  customAllows: [
-    'pattern:Googlebot', // Always allow Googlebot
-    'type:Search Crawler:Search Engines:googlebot' // Allow by type
-  ]
-});
-```
+- **Global AI Model Trainer Blocking**: Block all AI model training bots (GPTBot, Claude-Bot, etc.)
+- **Custom Block Rules**: Block specific categories, subcategories, bot types, or patterns
+- **Custom Allow Rules**: Create exceptions to allow specific bots even when they would otherwise be blocked
+
+To configure these settings:
+
+1. Log into your Spyglasses dashboard
+2. Navigate to your property settings
+3. Go to the "Traffic Control" section
+4. Configure your blocking preferences
+
+The SDK will automatically load and apply these settings when it syncs patterns from the API.
 
 ## Express.js Integration Example
 
@@ -155,8 +148,7 @@ const app = express();
 // Add Spyglasses middleware
 app.use(createSpyglassesMiddleware({
   apiKey: 'your-api-key',
-  debug: process.env.SPYGLASSES_DEBUG === 'true',
-  blockAiModelTrainers: true
+  debug: process.env.SPYGLASSES_DEBUG === 'true'
 }));
 
 app.get('/', (req, res) => {

@@ -16,6 +16,11 @@ export interface ApiPatternResponse {
   version: string;
   patterns: BotPattern[];
   aiReferrers: AiReferrerInfo[];
+  propertySettings: {
+    blockAiModelTrainers: boolean;
+    customBlocks: string[];
+    customAllows: string[];
+  };
 }
 
 /**
@@ -68,9 +73,6 @@ export interface AiReferrerInfo {
 export interface SpyglassesConfig {
   apiKey?: string;
   debug?: boolean;
-  blockAiModelTrainers?: boolean;
-  customBlocks?: string[];
-  customAllows?: string[];
   collectEndpoint?: string;
   patternsEndpoint?: string;
   autoSync?: boolean;

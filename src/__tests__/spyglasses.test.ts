@@ -23,10 +23,11 @@ describe('Spyglasses Core', () => {
                 pattern: 'GPTBot\\/[0-9]',
                 type: 'gptbot',
                 category: 'AI Crawler',
-                subcategory: 'Search Enhancement Crawlers',
+                subcategory: 'Model Training Crawlers',
                 company: 'OpenAI',
                 isCompliant: true,
-                intent: 'Search'
+                isAiModelTrainer: true,
+                intent: 'DataCollection'
               },
               {
                 pattern: 'ChatGPT-User\\/[0-9]',
@@ -35,6 +36,7 @@ describe('Spyglasses Core', () => {
                 subcategory: 'AI Assistants',
                 company: 'OpenAI',
                 isCompliant: true,
+                isAiModelTrainer: false,
                 intent: 'UserQuery'
               }
             ],
@@ -46,7 +48,12 @@ describe('Spyglasses Core', () => {
                 patterns: ['chat.openai.com'],
                 url: 'https://chat.openai.com'
               }
-            ]
+            ],
+            propertySettings: {
+              blockAiModelTrainers: false,
+              customBlocks: [],
+              customAllows: []
+            }
           })
         } as Response;
       }
@@ -91,7 +98,41 @@ describe('Spyglasses Core', () => {
       if (typeof result === 'object') {
         expect(result).toHaveProperty('version', '1.0.0');
         expect(result).toHaveProperty('patterns');
+        expect(result).toHaveProperty('propertySettings');
         expect(Array.isArray(result.patterns)).toBe(true);
+      }
+    });
+    
+    it('should load property settings from API response', async () => {
+      // Mock API response with specific property settings
+      vi.mocked(fetch).mockImplementationOnce(async (url) => {
+        if (url.toString().includes('/patterns')) {
+          return {
+            ok: true,
+            json: async () => ({
+              version: '1.0.0',
+              patterns: [],
+              aiReferrers: [],
+              propertySettings: {
+                blockAiModelTrainers: true,
+                customBlocks: ['category:Scraper'],
+                customAllows: ['pattern:Googlebot']
+              }
+            })
+          } as Response;
+        }
+        return { ok: false } as Response;
+      });
+
+      const result = await spyglasses.syncPatterns();
+      
+      expect(typeof result).toBe('object');
+      if (typeof result === 'object') {
+        expect(result.propertySettings).toEqual({
+          blockAiModelTrainers: true,
+          customBlocks: ['category:Scraper'],
+          customAllows: ['pattern:Googlebot']
+        });
       }
     });
     
@@ -244,80 +285,141 @@ describe('Spyglasses Core', () => {
     });
   });
   
-  describe('Blocking Rules', () => {
-    it('should apply customBlocks rules', () => {
-      // Create instance with custom blocks
-      const customSpyglasses = new Spyglasses({
-        apiKey: 'test-api-key',
-        customBlocks: ['category:AI Crawler']
-      });
-      
-      const result = customSpyglasses.detectBot('Mozilla/5.0 (compatible; GPTBot/1.0; +https://openai.com/gptbot)');
-      
-      expect(result.isBot).toBe(true);
-      expect(result.shouldBlock).toBe(true);
-    });
-    
-    it('should apply customAllows rules', () => {
-      // Create instance with custom allows
-      const customSpyglasses = new Spyglasses({
-        apiKey: 'test-api-key',
-        customBlocks: ['category:AI Crawler'],
-        customAllows: ['pattern:GPTBot\\/[0-9]']
-      });
-      
-      const result = customSpyglasses.detectBot('Mozilla/5.0 (compatible; GPTBot/1.0; +https://openai.com/gptbot)');
-      
-      expect(result.isBot).toBe(true);
-      expect(result.shouldBlock).toBe(false);
-    });
-    
-    it('should apply blockAiModelTrainers setting', () => {
-      // Create instance with AI model trainer blocking
-      const customSpyglasses = new Spyglasses({
-        apiKey: 'test-api-key',
-        blockAiModelTrainers: true
-      });
-      
-      // Test GPTBot (should be blocked with default patterns)
-      const gptBotResult = customSpyglasses.detectBot('Mozilla/5.0 (compatible; GPTBot/1.0; +https://openai.com/gptbot)');
-      expect(gptBotResult.isBot).toBe(true);
-      expect(gptBotResult.shouldBlock).toBe(true);
-      
-      // Test ClaudeBot (should be blocked with default patterns)  
-      const claudeResult = customSpyglasses.detectBot('Mozilla/5.0 (compatible; ClaudeBot/1.0; +https://anthropic.com)');
-      expect(claudeResult.isBot).toBe(true);
-      expect(claudeResult.shouldBlock).toBe(true);
-      
-      // Test ChatGPT-User (should NOT be blocked - it's an AI Assistant, not model trainer)
-      const chatgptUserResult = customSpyglasses.detectBot('Mozilla/5.0 (compatible; ChatGPT-User/1.0)');
-      expect(chatgptUserResult.isBot).toBe(true);
-      expect(chatgptUserResult.shouldBlock).toBe(false);
-    });
-
-    it('should block AI model trainers with default patterns before API sync', () => {
-      // Create instance with AI model trainer blocking but no API sync
-      const customSpyglasses = new Spyglasses({
-        blockAiModelTrainers: true,
-        autoSync: false // Ensure we're only using default patterns
-      });
-
-      // Override pattern with isAiModelTrainer flag
-      customSpyglasses['patterns'] = [
-        {
-          pattern: 'AITrainer\\/[0-9]',
-          type: 'ai-trainer',
-          category: 'AI Crawler',
-          subcategory: 'Data Collection',
-          company: 'Example',
-          isAiModelTrainer: true
+  describe('Platform-managed Blocking Rules', () => {
+    it('should apply blocking rules loaded from platform', async () => {
+      // Mock API response with blocking enabled for AI model trainers
+      vi.mocked(fetch).mockImplementationOnce(async (url) => {
+        if (url.toString().includes('/patterns')) {
+          return {
+            ok: true,
+            json: async () => ({
+              version: '1.0.0',
+              patterns: [
+                {
+                  pattern: 'GPTBot\\/[0-9]',
+                  type: 'gptbot',
+                  category: 'AI Crawler',
+                  subcategory: 'Model Training Crawlers',
+                  company: 'OpenAI',
+                  isCompliant: true,
+                  isAiModelTrainer: true,
+                  intent: 'DataCollection'
+                }
+              ],
+              aiReferrers: [],
+              propertySettings: {
+                blockAiModelTrainers: true,
+                customBlocks: [],
+                customAllows: []
+              }
+            })
+          } as Response;
         }
-      ];
+        return { ok: false } as Response;
+      });
 
-      const result = customSpyglasses.detectBot('Mozilla/5.0 (compatible; AITrainer/1.0)');
-
+      // Sync patterns to load platform settings
+      await spyglasses.syncPatterns();
+      
+      const result = spyglasses.detectBot('Mozilla/5.0 (compatible; GPTBot/1.0; +https://openai.com/gptbot)');
+      
       expect(result.isBot).toBe(true);
       expect(result.shouldBlock).toBe(true);
+    });
+    
+    it('should apply custom block rules from platform', async () => {
+      // Mock API response with custom blocking rules
+      vi.mocked(fetch).mockImplementationOnce(async (url) => {
+        if (url.toString().includes('/patterns')) {
+          return {
+            ok: true,
+            json: async () => ({
+              version: '1.0.0',
+              patterns: [
+                {
+                  pattern: 'GPTBot\\/[0-9]',
+                  type: 'gptbot',
+                  category: 'AI Crawler',
+                  subcategory: 'Model Training Crawlers',
+                  company: 'OpenAI',
+                  isCompliant: true,
+                  isAiModelTrainer: true,
+                  intent: 'DataCollection'
+                }
+              ],
+              aiReferrers: [],
+              propertySettings: {
+                blockAiModelTrainers: false,
+                customBlocks: ['category:AI Crawler'],
+                customAllows: []
+              }
+            })
+          } as Response;
+        }
+        return { ok: false } as Response;
+      });
+
+      // Sync patterns to load platform settings
+      await spyglasses.syncPatterns();
+      
+      const result = spyglasses.detectBot('Mozilla/5.0 (compatible; GPTBot/1.0; +https://openai.com/gptbot)');
+      
+      expect(result.isBot).toBe(true);
+      expect(result.shouldBlock).toBe(true);
+    });
+    
+    it('should apply custom allow rules from platform', async () => {
+      // Mock API response with custom allow rules that override blocks
+      vi.mocked(fetch).mockImplementationOnce(async (url) => {
+        if (url.toString().includes('/patterns')) {
+          return {
+            ok: true,
+            json: async () => ({
+              version: '1.0.0',
+              patterns: [
+                {
+                  pattern: 'GPTBot\\/[0-9]',
+                  type: 'gptbot',
+                  category: 'AI Crawler',
+                  subcategory: 'Model Training Crawlers',
+                  company: 'OpenAI',
+                  isCompliant: true,
+                  isAiModelTrainer: true,
+                  intent: 'DataCollection'
+                }
+              ],
+              aiReferrers: [],
+              propertySettings: {
+                blockAiModelTrainers: true,
+                customBlocks: [],
+                customAllows: ['pattern:GPTBot\\/[0-9]']
+              }
+            })
+          } as Response;
+        }
+        return { ok: false } as Response;
+      });
+
+      // Sync patterns to load platform settings
+      await spyglasses.syncPatterns();
+      
+      const result = spyglasses.detectBot('Mozilla/5.0 (compatible; GPTBot/1.0; +https://openai.com/gptbot)');
+      
+      expect(result.isBot).toBe(true);
+      expect(result.shouldBlock).toBe(false); // Should be allowed despite being AI model trainer
+    });
+    
+    it('should use default blocking behavior before platform sync', () => {
+      // Create instance without auto-sync to test default behavior
+      const testSpyglasses = new Spyglasses({
+        apiKey: 'test-key',
+        autoSync: false
+      });
+      
+      const result = testSpyglasses.detectBot('Mozilla/5.0 (compatible; GPTBot/1.0; +https://openai.com/gptbot)');
+      
+      expect(result.isBot).toBe(true);
+      expect(result.shouldBlock).toBe(false); // Default is not to block
     });
   });
   
@@ -344,11 +446,11 @@ describe('Spyglasses Core', () => {
           pattern: 'GPTBot\\/[0-9]',
           type: 'gptbot',
           category: 'AI Crawler',
-          subcategory: 'Search Enhancement Crawlers',
+          subcategory: 'Model Training Crawlers',
           company: 'OpenAI',
           isCompliant: true,
-          isAiModelTrainer: false,
-          intent: 'Search'
+          isAiModelTrainer: true,
+          intent: 'DataCollection'
         }
       };
       
@@ -475,11 +577,11 @@ describe('Spyglasses Core', () => {
           pattern: 'GPTBot\\/[0-9]',
           type: 'gptbot',
           category: 'AI Crawler',
-          subcategory: 'Search Enhancement Crawlers',
+          subcategory: 'Model Training Crawlers',
           company: 'OpenAI',
           isCompliant: true,
-          isAiModelTrainer: false,
-          intent: 'Search'
+          isAiModelTrainer: true,
+          intent: 'DataCollection'
         }
       };
       

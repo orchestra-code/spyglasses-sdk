@@ -15,9 +15,6 @@ import {
 const DEFAULT_CONFIG: Required<SpyglassesConfig> = {
   apiKey: '',
   debug: false,
-  blockAiModelTrainers: false,
-  customBlocks: [],
-  customAllows: [],
   collectEndpoint: 'https://www.spyglasses.io/api/collect',
   patternsEndpoint: 'https://www.spyglasses.io/api/patterns',
   autoSync: true
@@ -29,12 +26,14 @@ const DEFAULT_CONFIG: Required<SpyglassesConfig> = {
 export class Spyglasses {
   private apiKey: string;
   private debug: boolean;
-  private blockAiModelTrainers: boolean;
-  private customBlocks: string[];
-  private customAllows: string[];
   private collectEndpoint: string;
   private patternsEndpoint: string;
   private autoSync: boolean;
+  
+
+  private blockAiModelTrainers: boolean = false;
+  private customBlocks: string[] = [];
+  private customAllows: string[] = [];
   
   private patterns: BotPattern[] = [];
   private aiReferrers: AiReferrerInfo[] = [];
@@ -52,9 +51,6 @@ export class Spyglasses {
     
     this.apiKey = fullConfig.apiKey;
     this.debug = fullConfig.debug;
-    this.blockAiModelTrainers = fullConfig.blockAiModelTrainers;
-    this.customBlocks = fullConfig.customBlocks;
-    this.customAllows = fullConfig.customAllows;
     this.collectEndpoint = fullConfig.collectEndpoint;
     this.patternsEndpoint = fullConfig.patternsEndpoint;
     this.autoSync = fullConfig.autoSync;
@@ -286,6 +282,21 @@ export class Spyglasses {
       this.aiReferrers = data.aiReferrers || [];
       this.patternVersion = data.version || '1.0.0';
       this.lastPatternSync = Date.now();
+      
+      // Update property settings from the API response
+      if (data.propertySettings) {
+        this.blockAiModelTrainers = data.propertySettings.blockAiModelTrainers;
+        this.customBlocks = data.propertySettings.customBlocks;
+        this.customAllows = data.propertySettings.customAllows;
+        
+        if (this.debug) {
+          console.log('Spyglasses: Updated property settings from platform:', {
+            blockAiModelTrainers: this.blockAiModelTrainers,
+            customBlocks: this.customBlocks.length,
+            customAllows: this.customAllows.length
+          });
+        }
+      }
       
       // Clear regex cache after updating patterns
       this.patternRegexCache.clear();
@@ -786,9 +797,6 @@ export class Spyglasses {
   public updateConfig(config: Partial<SpyglassesConfig>): void {
     if (config.apiKey !== undefined) this.apiKey = config.apiKey;
     if (config.debug !== undefined) this.debug = config.debug;
-    if (config.blockAiModelTrainers !== undefined) this.blockAiModelTrainers = config.blockAiModelTrainers;
-    if (config.customBlocks !== undefined) this.customBlocks = config.customBlocks;
-    if (config.customAllows !== undefined) this.customAllows = config.customAllows;
     if (config.collectEndpoint !== undefined) this.collectEndpoint = config.collectEndpoint;
     if (config.patternsEndpoint !== undefined) this.patternsEndpoint = config.patternsEndpoint;
     if (config.autoSync !== undefined) this.autoSync = config.autoSync;
