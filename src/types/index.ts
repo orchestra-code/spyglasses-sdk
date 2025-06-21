@@ -76,6 +76,7 @@ export interface SpyglassesConfig {
   collectEndpoint?: string;
   patternsEndpoint?: string;
   autoSync?: boolean;
+  platformType?: string;
 }
 
 /**
@@ -94,6 +95,7 @@ export interface CollectorPayload {
   response_time_ms: number;
   headers: Record<string, string>;
   timestamp: string;
+  platformType?: string;
   metadata: {
     was_blocked: boolean;
     agent_type?: string;

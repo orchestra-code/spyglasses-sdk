@@ -17,7 +17,8 @@ const DEFAULT_CONFIG: Required<SpyglassesConfig> = {
   debug: false,
   collectEndpoint: 'https://www.spyglasses.io/api/collect',
   patternsEndpoint: 'https://www.spyglasses.io/api/patterns',
-  autoSync: true
+  autoSync: true,
+  platformType: ''
 };
 
 /**
@@ -29,6 +30,7 @@ export class Spyglasses {
   private collectEndpoint: string;
   private patternsEndpoint: string;
   private autoSync: boolean;
+  private platformType: string;
   
 
   private blockAiModelTrainers: boolean = false;
@@ -54,6 +56,7 @@ export class Spyglasses {
     this.collectEndpoint = fullConfig.collectEndpoint;
     this.patternsEndpoint = fullConfig.patternsEndpoint;
     this.autoSync = fullConfig.autoSync;
+    this.platformType = fullConfig.platformType;
     
     // Load initial patterns
     this.loadDefaultPatterns();
@@ -686,6 +689,7 @@ export class Spyglasses {
       response_time_ms: responseTime,
       headers: requestInfo.headers || {}, // Ensure headers is never undefined
       timestamp: new Date().toISOString(),
+      platformType: this.platformType || undefined,
       metadata
     };
     
@@ -800,5 +804,6 @@ export class Spyglasses {
     if (config.collectEndpoint !== undefined) this.collectEndpoint = config.collectEndpoint;
     if (config.patternsEndpoint !== undefined) this.patternsEndpoint = config.patternsEndpoint;
     if (config.autoSync !== undefined) this.autoSync = config.autoSync;
+    if (config.platformType !== undefined) this.platformType = config.platformType;
   }
 } 
