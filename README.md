@@ -2,7 +2,7 @@
 
 **NOTE: This package is not designed to be used directly. Instead, use the spyglasses package that's built for your environment.**
 
-This SDK provides bot detection and AI agent identification tools for integration into web frameworks and platforms. It's designed to help you identify, track, and optionally block AI bots, agents, and human visitors coming from AI platforms.
+The Spyglasses core JavaScript SDK enables you to detect AI Agents, bots, crawlers, and referrers in your Python web applications. It provides comprehensive [AI SEO](https://www.spyglasses.io), shows you when your site features in ChatGPT, Claude, Perplexity, and other AI assistant chat platforms. It can also prevent your site's content from being used for training AI by blocking the crawlers that scrape your content for training.
 
 ## Features
 
