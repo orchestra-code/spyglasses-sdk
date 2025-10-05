@@ -1,6 +1,6 @@
 {
 	"name": "@spyglasses/sdk",
-	"version": "0.5.2",
+	"version": "0.5.3",
 	"description": "Core AI SEO, bot detection, and blocking for Spyglasses JavaScript-based plugins.",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
